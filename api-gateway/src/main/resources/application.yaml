@@ -2,6 +2,23 @@ spring:
   application:
     name: api-gateway
 
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                  - Path=/products/**
+
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                  - Path=/orders/**
+
+
 
 server:
   port: 8080
@@ -10,3 +27,4 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
