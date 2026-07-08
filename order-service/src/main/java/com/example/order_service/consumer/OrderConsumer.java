@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderConsumer {
 
-    @RabbitListener(
+   /* @RabbitListener(
             queues = RabbitMQConfig.QUEUE
-    )
+    )*/
     public void receive(
             OrderCreatedEvent event){
 
