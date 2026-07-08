@@ -20,4 +20,13 @@ public class Notification {
 
     private String status;
 
+    public Notification(Long orderId, String message, String status) {
+        this.orderId = orderId;
+        this.message = message;
+        this.status = status;
+    }
+
+    public Notification() {
+
+    }
 }
