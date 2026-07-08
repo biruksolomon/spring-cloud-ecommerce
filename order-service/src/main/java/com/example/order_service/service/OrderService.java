@@ -15,7 +15,6 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 //    private final RestTemplate restTemp;
-    @Autowired
     private ProductClient productClient;
     public OrderService(
             OrderRepository orderRepository,
