@@ -18,9 +18,10 @@ public class Notification {
 
     private String message;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private NotificationStatus status;
 
-    public Notification(Long orderId, String message, String status) {
+    public Notification(Long orderId, String message, NotificationStatus status) {
         this.orderId = orderId;
         this.message = message;
         this.status = status;

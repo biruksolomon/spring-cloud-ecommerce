@@ -1,6 +1,7 @@
 package com.example.notification_service.service;
 
 import com.example.notification_service.domain.Notification;
+import com.example.notification_service.domain.NotificationStatus;
 import com.example.notification_service.dto.OrderCreatedEvent;
 import com.example.notification_service.repository.NotificationRepository;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ public class NotificationService {
     public void saveNotification(OrderCreatedEvent event){
         Notification notification = new Notification();
         notification.setOrderId(event.getOrderId());
-        notification.setStatus("PENDING");
+        notification.setStatus(NotificationStatus.PENDING);
         notification.setMessage("Order Created Successfully");
 
         notificationRepository.save(notification);
