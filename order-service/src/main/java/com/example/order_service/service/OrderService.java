@@ -4,9 +4,10 @@ package com.example.order_service.service;
 import com.example.order_service.client.ProductClient;
 import com.example.order_service.domin.Order;
 import com.example.order_service.dtos.ProductResponseDto;
+import com.example.order_service.event.OrderCreatedEvent;
+import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -14,13 +15,16 @@ import org.springframework.web.client.RestTemplate;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+
+    private final OrderPublisher orderPublisher;
 //    private final RestTemplate restTemp;
     private ProductClient productClient;
     public OrderService(
             OrderRepository orderRepository,
-            RestTemplate restTemp) {
+            RestTemplate restTemp, OrderPublisher orderPublisher) {
         this.orderRepository = orderRepository;
 //        this.restTemp= restTemp;
+        this.orderPublisher = orderPublisher;
     }
 
     @CircuitBreaker(
@@ -38,7 +42,17 @@ public class OrderService {
         assert productResponseDto != null;
         order.setTotalPrice(productResponseDto.getPrice()* order.getQuantity());
 
-        return orderRepository.save(order);
+        Order savedorder = orderRepository.save(order);
+
+        orderPublisher.publish(
+                new OrderCreatedEvent(
+                        savedorder.getOrderId(),
+                        savedorder.getProductId(),
+                        savedorder.getQuantity(),
+                        savedorder.getTotalPrice()
+                )
+        );
+        return savedorder;
     }
 
     public Order productFallback(
