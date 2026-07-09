@@ -8,7 +8,6 @@ import com.example.order_service.event.OrderCreatedEvent;
 import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,8 +17,8 @@ public class OrderService {
 
     private final OrderPublisher orderPublisher;
 //    private final RestTemplate restTemp;
-    @Autowired
-    private ProductClient productClient;
+
+    private final ProductClient productClient;
 
 
     public OrderService(
@@ -28,6 +27,7 @@ public class OrderService {
         this.orderRepository = orderRepository;
         //        this.restTemp= restTemp;
         this.orderPublisher = orderPublisher;
+        this.productClient = productClient;
     }
 
     @CircuitBreaker(
