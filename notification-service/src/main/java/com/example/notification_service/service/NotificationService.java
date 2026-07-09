@@ -20,6 +20,12 @@ public class NotificationService {
         notification.setStatus(NotificationStatus.PENDING);
         notification.setMessage("Order Created Successfully");
 
-        notificationRepository.save(notification);
+        /*Simulated failure for test DLQ*/
+        throw new RuntimeException(
+
+                "Database Down"
+
+        );
+//        notificationRepository.save(notification);
     }
 }

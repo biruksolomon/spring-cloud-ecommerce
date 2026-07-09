@@ -18,6 +18,10 @@ spring:
     username: guest
     password: guest
 
+    listener:
+      simple:
+        default-requeue-rejected: false
+
 server:
   port: 8083
 eureka:
