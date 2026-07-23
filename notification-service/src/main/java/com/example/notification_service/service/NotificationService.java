@@ -19,13 +19,8 @@ public class NotificationService {
         notification.setOrderId(event.getOrderId());
         notification.setStatus(NotificationStatus.PENDING);
         notification.setMessage("Order Created Successfully");
+//        throw new RuntimeException("Database simulated failure");
 
-        /*Simulated failure for test DLQ*/
-        throw new RuntimeException(
-
-                "Database Down"
-
-        );
-//        notificationRepository.save(notification);
+        notificationRepository.save(notification);
     }
 }
