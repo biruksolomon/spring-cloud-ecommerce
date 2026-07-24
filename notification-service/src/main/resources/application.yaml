@@ -12,15 +12,25 @@ spring:
       ddl-auto: update
     show-sql: true
 
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+  kafka:
+    bootstrap-servers: localhost:9092
 
-    listener:
-      simple:
-        default-requeue-rejected: false
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+#  rabbitmq:
+#    host: localhost
+#    port: 5672
+#    username: guest
+#    password: guest
+#
+#    listener:
+#      simple:
+#        default-requeue-rejected: false
 
 server:
   port: 8083
