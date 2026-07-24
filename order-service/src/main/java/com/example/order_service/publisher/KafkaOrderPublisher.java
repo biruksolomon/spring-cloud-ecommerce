@@ -17,13 +17,26 @@ public class KafkaOrderPublisher {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publish(OrderCreatedEvent event) {
+    public void publish(
+            OrderCreatedEvent event){
 
         kafkaTemplate.send(
                 TOPIC,
                 event
+        ).whenComplete(
+                (result,ex)->{
+                    if(ex==null){
+                        System.out.println(
+                                "Message Sent"
+                        );
+                    }
+                    else{
+                        System.out.println(
+                                ex.getMessage()
+                        );
+                    }
+                }
         );
-
     }
 
 }

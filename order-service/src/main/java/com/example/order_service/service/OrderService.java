@@ -5,6 +5,7 @@ import com.example.order_service.client.ProductClient;
 import com.example.order_service.domin.Order;
 import com.example.order_service.dtos.ProductResponseDto;
 import com.example.order_service.event.OrderCreatedEvent;
+import com.example.order_service.publisher.KafkaOrderPublisher;
 import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -15,18 +16,21 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 
-    private final OrderPublisher orderPublisher;
+    private final KafkaOrderPublisher kafkaOrderPublisher;
+//    private final OrderPublisher orderPublisher;
 //    private final RestTemplate restTemp;
 
     private final ProductClient productClient;
 
 
     public OrderService(
-            OrderRepository orderRepository,
-            /*RestTemplate restTemp,*/ OrderPublisher orderPublisher, ProductClient productClient) {
+            OrderRepository orderRepository,KafkaOrderPublisher kafkaOrderPublisher
+            /*RestTemplate restTemp,*/ /*OrderPublisher orderPublisher*/, ProductClient productClient) {
         this.orderRepository = orderRepository;
         //        this.restTemp= restTemp;
-        this.orderPublisher = orderPublisher;
+//        this.orderPublisher = orderPublisher;
+
+        this.kafkaOrderPublisher = kafkaOrderPublisher;
         this.productClient = productClient;
     }
 
@@ -47,7 +51,15 @@ public class OrderService {
 
         Order savedorder = orderRepository.save(order);
 
-        orderPublisher.publish(
+      /*  orderPublisher.publish(
+                new OrderCreatedEvent(
+                        savedorder.getOrderId(),
+                        savedorder.getProductId(),
+                        savedorder.getQuantity(),
+                        savedorder.getTotalPrice()
+                )
+        );*/
+        kafkaOrderPublisher.publish(
                 new OrderCreatedEvent(
                         savedorder.getOrderId(),
                         savedorder.getProductId(),
