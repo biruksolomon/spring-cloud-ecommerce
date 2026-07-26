@@ -1,3 +1,4 @@
+/*
 package com.example.notification_service.config;
 
 
@@ -9,14 +10,16 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration
 public class RabbitMQConfig {
 
     public static final String QUEUE = "notification.queue";
 
+*/
 /*    public static final String EXCHANGE = "order.exchange";
 
-    public static final String ROUTING_KEY = "order.created";*/
+    public static final String ROUTING_KEY = "order.created";*//*
+
 
     public static final String DLQ = "notification.dlq";
 
@@ -54,9 +57,11 @@ public class RabbitMQConfig {
     }
 
 
-    /*
+    */
+/*
     * Create Dead Letter Queue
-    * */
+    * *//*
+
     @Bean
     public Queue deadLetterQueue(){
         return QueueBuilder
@@ -64,18 +69,22 @@ public class RabbitMQConfig {
                 .build();
     }
 
-    /*
+    */
+/*
     * Create Dead Letter Exchange
-    * */
+    * *//*
+
 
     @Bean
     public DirectExchange deadLetterExchange(){
         return new DirectExchange(DLX);
     }
 
-    /*
+    */
+/*
     * Bind DLQ
-    * */
+    * *//*
+
     @Bean
     public Binding deadLetterBinding(){
         return BindingBuilder
@@ -85,3 +94,4 @@ public class RabbitMQConfig {
     }
 
 }
+*/
