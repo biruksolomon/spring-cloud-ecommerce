@@ -37,6 +37,13 @@ public class KafkaProducerConfig {
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 MyJsonSerializer.class);
 
+        // Reliability settings: wait for all in-sync replicas to confirm,
+        // retry on transient failures, and de-duplicate retries so a retry
+        // can never create a second copy of the same message.
+        configProps.put(ProducerConfig.ACKS_CONFIG, "all");
+        configProps.put(ProducerConfig.RETRIES_CONFIG, 5);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
