@@ -23,7 +23,7 @@ app:
     payment-topic: payment-events
 
 server:
-  port: 8085
+  port: 8086
 
 eureka:
   client:
