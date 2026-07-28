@@ -61,13 +61,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             Long userId = jwtProvider.extractUserId(token);
             String email = jwtProvider.extractEmail(token);
 
-            request.setAttribute("userId", userId);
-            request.setAttribute("email", email);
-
-            // Add headers for downstream services
+            // Add headers for downstream services - these travel over the
+            // network with the proxied request, unlike a servlet attribute
             CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
-            wrappedRequest.setAttribute("X-User-Id", userId);
-            wrappedRequest.setAttribute("X-User-Email", email);
+            wrappedRequest.addHeader("X-User-Id", String.valueOf(userId));
+            wrappedRequest.addHeader("X-User-Email", email);
 
             filterChain.doFilter(wrappedRequest, response);
         } catch (Exception e) {
