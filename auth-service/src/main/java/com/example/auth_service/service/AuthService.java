@@ -9,6 +9,8 @@ import com.example.auth_service.security.JwtProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class AuthService {
 
@@ -33,6 +35,7 @@ public class AuthService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .active(true)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -33,5 +35,5 @@ public class User {
     private Boolean active = true;
 
     @Column(nullable = false, updatable = false)
-    private Long createdAt = System.currentTimeMillis();
+    private LocalDateTime createdAt ;
 }
