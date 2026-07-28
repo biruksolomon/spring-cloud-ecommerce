@@ -6,33 +6,25 @@ spring:
       server:
         webmvc:
           routes:
-          - id: order-service
-            uri: lb://order-service
-            predicates:
-              - Path=/orders/**
-            filters:
-              - RewritePath=/orders/(?<segment>/?.*), /$\{segment}
+            - id: order-service
+              uri: lb://order-service
+              predicates:
+                - Path=/orders/**
 
-          - id: product-service
-            uri: lb://product-service
-            predicates:
-              - Path=/products/**
-            filters:
-              - RewritePath=/products/(?<segment>/?.*), /$\{segment}
+            - id: product-service
+              uri: lb://product-service
+              predicates:
+                - Path=/products/**
 
-          - id: auth-service
-            uri: lb://auth-service
-            predicates:
-              - Path=/auth/**
-            filters:
-              - RewritePath=/auth/(?<segment>/?.*), /$\{segment}
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth/**
 
-          - id: notification-service
-            uri: lb://notification-service
-            predicates:
-              - Path=/notifications/**
-            filters:
-              - RewritePath=/notifications/(?<segment>/?.*), /$\{segment}
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/notifications/**
 
       globalcors:
         corsConfigurations:
