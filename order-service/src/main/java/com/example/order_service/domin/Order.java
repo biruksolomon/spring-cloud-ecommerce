@@ -1,10 +1,7 @@
 package com.example.order_service.domin;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +14,21 @@ public class Order {
     @GeneratedValue
     private Long orderId;
 
+    @Column(nullable = false)
+    private Long userId;
+
     private Long productId;
 
     private Integer quantity;
 
     private Double totalPrice;
+
+    @Column(nullable = false)
+    private String status = "PENDING";
+
+    @Column(nullable = false, updatable = false)
+    private Long createdAt = System.currentTimeMillis();
+
+    @Column
+    private Long updatedAt;
 }
