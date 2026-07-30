@@ -9,9 +9,11 @@ import com.example.order_service.publisher.KafkaOrderPublisher;
 import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -88,6 +90,37 @@ public class OrderService {
         }
 
         return order;
+    }
+
+    // Applies the outcome of a PaymentEvent to the matching Order, closing
+    // the create-order -> charge-payment -> confirm-or-cancel saga.
+    public void applyPaymentResult(Long orderId, String paymentStatus) {
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            // Order not found (shouldn't happen in practice since orderId
+            // comes from an order this service created) - log and stop
+            // rather than throw, since throwing here would just cause an
+            // endless redelivery loop for a message that can never succeed.
+            log.warn("Received payment result for unknown orderId {}", orderId);
+            return;
+        }
+
+        // Idempotency guard: once an order has left PENDING, a redelivered
+        // or duplicate payment-events message should not flip it again.
+        if (!"PENDING".equals(order.getStatus())) {
+            log.info("Order {} already in status {}, ignoring payment result {}",
+                    orderId, order.getStatus(), paymentStatus);
+            return;
+        }
+
+        String newStatus = "SUCCESS".equals(paymentStatus) ? "CONFIRMED" : "CANCELLED";
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(System.currentTimeMillis());
+        orderRepository.save(order);
+
+        log.info("Order {} moved to status {} following payment result {}", orderId, newStatus, paymentStatus);
     }
 
 }
