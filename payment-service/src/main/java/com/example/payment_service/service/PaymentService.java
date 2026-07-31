@@ -1,6 +1,6 @@
 package com.example.payment_service.service;
 
-import com.example.payment_service.config.PaymentEventPublisher;
+import com.example.payment_service.publisher.PaymentEventPublisher;
 import com.example.payment_service.domain.Payment;
 import com.example.payment_service.domain.PaymentStatus;
 import com.example.payment_service.dto.OrderCreatedEvent;
@@ -9,6 +9,7 @@ import com.example.payment_service.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -56,5 +57,22 @@ public class PaymentService {
                 saved.getPaymentId(),
                 saved.getStatus().name()
         ));
+    }
+
+    // Mirrors OrderService.getOrderById's authorization pattern: a user can
+    // only look up a payment that belongs to them.
+    public Payment getPaymentByOrderId(Long orderId, Long userId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new RuntimeException("Payment not found for orderId " + orderId));
+
+        if (!payment.getUserId().equals(userId)) {
+            throw new RuntimeException("Unauthorized access to this payment");
+        }
+
+        return payment;
+    }
+
+    public List<Payment> getPaymentsForUser(Long userId) {
+        return paymentRepository.findByUserId(userId);
     }
 }

@@ -1,4 +1,4 @@
-package com.example.payment_service.config;
+package com.example.payment_service.publisher;
 
 import com.example.payment_service.event.PaymentEvent;
 import org.springframework.beans.factory.annotation.Value;
