@@ -64,6 +64,7 @@ public class OrderService {
         kafkaOrderPublisher.publish(
                 new OrderCreatedEvent(
                         savedorder.getOrderId(),
+                        savedorder.getUserId(),
                         savedorder.getProductId(),
                         savedorder.getQuantity(),
                         savedorder.getTotalPrice()

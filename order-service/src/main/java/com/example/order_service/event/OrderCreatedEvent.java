@@ -13,6 +13,8 @@ public class OrderCreatedEvent {
 
     private Long orderId;
 
+    private Long userId;
+
     private Long productId;
 
     private Integer quantity;
