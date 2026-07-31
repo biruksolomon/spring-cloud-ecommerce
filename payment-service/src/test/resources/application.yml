@@ -1,9 +1,9 @@
 spring:
   application:
-    name: order-service
+    name: payment-service
 
   datasource:
-    url: jdbc:h2:mem:orderdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:paymentdb;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -21,11 +21,10 @@ spring:
 
 app:
   kafka:
-    payment-topic: order-events
+    payment-topic: payment-events
 
 eureka:
   client:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-
