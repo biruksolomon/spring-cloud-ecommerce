@@ -1,0 +1,224 @@
+version: "3.8"
+
+# Full local stack: MySQL + Kafka + all 7 microservices.
+# Usage:
+#   docker compose up --build        # first run / after code changes
+#   docker compose up -d             # subsequent runs
+#   docker compose down -v           # tear down + wipe volumes
+#
+# Service URLs from the host machine:
+#   Eureka dashboard:  http://localhost:8761
+#   API Gateway:        http://localhost:8080
+#   Kafka UI:            http://localhost:8085
+
+x-jwt-secret: &jwt-secret mySecretKeyForJWTTokenGenerationAndValidationPurposesOnlyForDevelopmentAndTestingEnvironment
+
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
+services:
+
+  # ---------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ecommerce-net
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Two listeners: PLAINTEXT for other containers on the docker network,
+      # PLAINTEXT_HOST for tools running on the host machine.
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - ecommerce-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      - kafka
+    networks:
+      - ecommerce-net
+
+  # ---------------------------------------------------------------
+  # Discovery
+  # ---------------------------------------------------------------
+
+  discovery-server:
+    build: ./discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-net
+
+  # ---------------------------------------------------------------
+  # Gateway
+  # ---------------------------------------------------------------
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka
+      JWT_SECRET: *jwt-secret
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-server
+      - auth-service
+    networks:
+      - ecommerce-net
+
+  # ---------------------------------------------------------------
+  # Business services
+  # ---------------------------------------------------------------
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+      JWT_SECRET: *jwt-secret
+    ports:
+      - "8084:8084"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8086:8086"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8083:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net

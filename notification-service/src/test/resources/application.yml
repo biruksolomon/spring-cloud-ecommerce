@@ -1,9 +1,9 @@
 spring:
   application:
-    name: order-service
+    name: notification-service
 
   datasource:
-    url: jdbc:h2:mem:orderdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:notificationdb;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -18,6 +18,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 
 
 eureka:
@@ -25,4 +32,3 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-
