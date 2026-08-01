@@ -3,6 +3,7 @@ package com.example.auth_service.service;
 import com.example.auth_service.dto.AuthResponse;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.RegisterRequest;
+import com.example.auth_service.entity.Role;
 import com.example.auth_service.entity.User;
 import com.example.auth_service.repository.UserRepository;
 import com.example.auth_service.security.JwtProvider;
@@ -35,18 +36,23 @@ public class AuthService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .active(true)
+                // Registration always creates a regular customer account -
+                // admin accounts are promoted directly in the database, not
+                // self-assigned through this endpoint.
+                .role(Role.CUSTOMER)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
 
-        String token = jwtProvider.generateToken(user.getId(), user.getEmail());
+        String token = jwtProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
 
         return AuthResponse.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .role(user.getRole())
                 .token(token)
                 .build();
     }
@@ -63,13 +69,14 @@ public class AuthService {
             throw new RuntimeException("User account is inactive");
         }
 
-        String token = jwtProvider.generateToken(user.getId(), user.getEmail());
+        String token = jwtProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
 
         return AuthResponse.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .role(user.getRole())
                 .token(token)
                 .build();
     }

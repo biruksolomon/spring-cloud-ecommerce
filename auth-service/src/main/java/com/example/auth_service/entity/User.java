@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -33,6 +34,13 @@ public class User {
 
     @Column(nullable = false)
     private Boolean active = true;
+
+    // DB-level default keeps this NOT NULL migration safe against rows that
+    // existed before the role column was added.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @ColumnDefault("'CUSTOMER'")
+    private Role role;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt ;

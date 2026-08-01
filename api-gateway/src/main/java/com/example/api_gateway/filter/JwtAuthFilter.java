@@ -22,9 +22,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Autowired
     private JwtProvider jwtProvider;
 
-    private static final List<String> PUBLIC_ENDPOINTS = Arrays.asList(
+    // Endpoints that never require a token, regardless of method.
+    private static final List<String> PUBLIC_ANY_METHOD = Arrays.asList(
             "/auth/register",
-            "/auth/login",
+            "/auth/login"
+    );
+
+    // Endpoints that are public for reads only - mutating methods
+    // (POST/PUT/PATCH/DELETE) still require a valid token.
+    private static final List<String> PUBLIC_READ_ONLY = List.of(
+            "/products"
+    );
+
+    // Endpoints where mutating methods require the ADMIN role, even though
+    // the caller is authenticated. Reads are governed by PUBLIC_READ_ONLY /
+    // the default "any authenticated user" rule above, not this list.
+    private static final List<String> ADMIN_ONLY_WRITE = List.of(
             "/products"
     );
 
@@ -60,12 +73,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             Long userId = jwtProvider.extractUserId(token);
             String email = jwtProvider.extractEmail(token);
+            String role = jwtProvider.extractRole(token);
+
+            if (isAdminOnlyMutation(requestPath, method) && !"ADMIN".equals(role)) {
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                response.getWriter().write("Admin role required for this operation");
+                return;
+            }
 
             // Add headers for downstream services - these travel over the
             // network with the proxied request, unlike a servlet attribute
             CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
             wrappedRequest.addHeader("X-User-Id", String.valueOf(userId));
             wrappedRequest.addHeader("X-User-Email", email);
+            wrappedRequest.addHeader("X-User-Role", role);
 
             filterChain.doFilter(wrappedRequest, response);
         } catch (Exception e) {
@@ -76,7 +97,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicEndpoint(String path, String method) {
-        for (String endpoint : PUBLIC_ENDPOINTS) {
+        for (String endpoint : PUBLIC_ANY_METHOD) {
+            if (path.startsWith(endpoint)) {
+                return true;
+            }
+        }
+
+        if ("GET".equalsIgnoreCase(method)) {
+            for (String endpoint : PUBLIC_READ_ONLY) {
+                if (path.startsWith(endpoint)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isAdminOnlyMutation(String path, String method) {
+        if ("GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+        for (String endpoint : ADMIN_ONLY_WRITE) {
             if (path.startsWith(endpoint)) {
                 return true;
             }
