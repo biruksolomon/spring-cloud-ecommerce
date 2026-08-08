@@ -1,14 +1,23 @@
 package com.example.payment_service.config;
 
+import com.example.payment_service.security.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Reads the X-User-Id / X-User-Role headers forwarded by the api-gateway's
+ * JwtAuthFilter. The role attribute ("userRole") is what
+ * RoleAuthorizationInterceptor checks against @RequireRole on the
+ * admin-only listing endpoint.
+ */
+@Slf4j
 @Component
 public class UserContextFilter extends OncePerRequestFilter {
 
@@ -22,6 +31,15 @@ public class UserContextFilter extends OncePerRequestFilter {
                 request.setAttribute("userId", Long.valueOf(userIdHeader));
             } catch (NumberFormatException ignored) {
                 // malformed header - leave userId unset rather than fail the request
+            }
+        }
+
+        String roleHeader = request.getHeader("X-User-Role");
+        if (roleHeader != null) {
+            try {
+                request.setAttribute("userRole", Role.valueOf(roleHeader));
+            } catch (IllegalArgumentException e) {
+                log.warn("Unrecognized X-User-Role header value: {}", roleHeader);
             }
         }
 
