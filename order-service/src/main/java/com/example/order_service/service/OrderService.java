@@ -3,10 +3,9 @@ package com.example.order_service.service;
 
 import com.example.order_service.client.ProductClient;
 import com.example.order_service.domin.Order;
-import com.example.order_service.dtos.ProductResponseDto;
+import com.example.order_service.dto.ProductResponseDto;
 import com.example.order_service.event.OrderCreatedEvent;
 import com.example.order_service.publisher.KafkaOrderPublisher;
-import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
