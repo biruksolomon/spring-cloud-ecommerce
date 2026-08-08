@@ -1,6 +1,9 @@
 package com.example.payment_service.repository;
 
 import com.example.payment_service.domain.Payment;
+import com.example.payment_service.domain.PaymentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +15,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByOrderId(Long orderId);
 
     List<Payment> findByUserId(Long userId);
+
+    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
 }

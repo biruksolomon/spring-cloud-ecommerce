@@ -1,6 +1,5 @@
-package com.example.payment_service.config;
+package com.example.payment_service.security;
 
-import com.example.payment_service.security.Role;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
