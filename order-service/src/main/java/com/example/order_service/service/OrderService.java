@@ -5,15 +5,30 @@ import com.example.order_service.client.ProductClient;
 import com.example.order_service.domin.Order;
 import com.example.order_service.dto.ProductResponseDto;
 import com.example.order_service.event.OrderCreatedEvent;
+import com.example.order_service.exception.InvalidOrderStatusException;
+import com.example.order_service.exception.OrderNotFoundException;
+import com.example.order_service.exception.UnauthorizedOrderAccessException;
 import com.example.order_service.publisher.KafkaOrderPublisher;
+import com.example.order_service.publisher.OrderPublisher;
 import com.example.order_service.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 @Service
 @Slf4j
 public class OrderService {
+
+    // The statuses the saga (create -> pay -> confirm/cancel) and admin
+    // overrides are allowed to move an order into. Kept as a fixed set
+    // rather than a JPA enum so this doesn't require a migration on the
+    // existing `status varchar` column.
+    private static final Set<String> VALID_STATUSES = Set.of("PENDING", "CONFIRMED", "CANCELLED");
 
     private final OrderRepository orderRepository;
 
@@ -83,13 +98,38 @@ public class OrderService {
 
     public Order getOrderById(Long orderId, Long userId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
 
         if (!order.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized access to this order");
+            throw new UnauthorizedOrderAccessException(orderId);
         }
 
         return order;
+    }
+
+    // Admin-only: list every order regardless of owner. Guarded by
+    // @RequireRole(ADMIN) on the controller method, not by any check here -
+    // this method itself has no notion of "whose" orders it's returning.
+    public Page<Order> getAllOrders(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findAll(pageable);
+    }
+
+    // Admin-only: force an order's status regardless of the normal
+    // create -> pay -> confirm/cancel saga. Useful for support overrides
+    // (e.g. manually cancelling a stuck PENDING order). Guarded by
+    // @RequireRole(ADMIN) on the controller method.
+    public Order updateOrderStatus(Long orderId, String newStatus) {
+        if (!VALID_STATUSES.contains(newStatus)) {
+            throw new InvalidOrderStatusException(newStatus, VALID_STATUSES);
+        }
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(System.currentTimeMillis());
+        return orderRepository.save(order);
     }
 
     // Applies the outcome of a PaymentEvent to the matching Order, closing
