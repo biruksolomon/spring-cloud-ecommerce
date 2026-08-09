@@ -25,7 +25,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // Endpoints that never require a token, regardless of method.
     private static final List<String> PUBLIC_ANY_METHOD = Arrays.asList(
             "/auth/register",
-            "/auth/login"
+            "/auth/login",
+            // Called by Stripe, not by a logged-in user - authenticated by
+            // its own Stripe-Signature header instead, verified inside
+            // payment-service's PaymentWebhookController.
+            "/payments/webhook"
     );
 
     // Endpoints that are public for reads only - mutating methods
