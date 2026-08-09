@@ -5,6 +5,10 @@ import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.RegisterRequest;
 import com.example.auth_service.entity.Role;
 import com.example.auth_service.entity.User;
+import com.example.auth_service.exception.AccountInactiveException;
+import com.example.auth_service.exception.EmailAlreadyRegisteredException;
+import com.example.auth_service.exception.InvalidCredentialsException;
+import com.example.auth_service.exception.UserNotFoundException;
 import com.example.auth_service.repository.UserRepository;
 import com.example.auth_service.security.JwtProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,7 +31,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new EmailAlreadyRegisteredException(request.getEmail());
         }
 
         User user = User.builder()
@@ -38,7 +42,8 @@ public class AuthService {
                 .active(true)
                 // Registration always creates a regular customer account -
                 // admin accounts are promoted directly in the database, not
-                // self-assigned through this endpoint.
+                // self-assigned through this endpoint. RegisterRequest has
+                // no `role` field, so there is nothing for a client to set.
                 .role(Role.CUSTOMER)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -59,14 +64,17 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                // Same exception for "no such email" and "wrong password"
+                // below - a distinct message here would let a caller
+                // enumerate which emails are registered.
+                .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         if (!user.getActive()) {
-            throw new RuntimeException("User account is inactive");
+            throw new AccountInactiveException();
         }
 
         String token = jwtProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
@@ -83,6 +91,6 @@ public class AuthService {
 
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
     }
 }
