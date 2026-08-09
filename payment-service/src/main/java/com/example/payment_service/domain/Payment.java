@@ -27,6 +27,14 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status;
 
+    // Stripe's id for the PaymentIntent backing this payment, e.g.
+    // "pi_3Nxxx...". Nullable because a row created before Stripe
+    // integration existed, or one that failed before Stripe was even
+    // called, won't have one. Used to match incoming webhook events
+    // back to this row.
+    @Column(unique = true)
+    private String stripePaymentIntentId;
+
     @Column(nullable = false, updatable = false)
     private Long createdAt = System.currentTimeMillis();
 }

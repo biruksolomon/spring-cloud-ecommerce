@@ -22,6 +22,14 @@ app:
   kafka:
     payment-topic: payment-events
 
+# Stripe test-mode keys - get these from your own Stripe dashboard
+# (dashboard.stripe.com/test/apikeys and .../webhooks). Both required;
+# no default here since a placeholder secret key would fail every call
+# with an auth error that's confusing to debug.
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
 server:
   port: 8086
 
