@@ -189,6 +189,11 @@ services:
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      # Test-mode keys from dashboard.stripe.com/test/apikeys and
+      # dashboard.stripe.com/test/webhooks - set these in a .env file
+      # alongside docker-compose.yml, do not commit real values.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     ports:
       - "8086:8086"
     depends_on:

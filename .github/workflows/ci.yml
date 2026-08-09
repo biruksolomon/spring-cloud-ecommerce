@@ -40,6 +40,9 @@ jobs:
       # Each service is an independent Maven project (no root/parent pom),
       # so build+test runs per-service rather than as one multi-module reactor.
       - name: Build and test
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         working-directory: ${{ matrix.service }}
         run: ./mvnw -B verify
 
