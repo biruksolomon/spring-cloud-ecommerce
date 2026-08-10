@@ -3,8 +3,8 @@ package com.example.payment_service.controller;
 import com.example.payment_service.service.PaymentService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
+import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +18,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Receives Stripe's asynchronous notifications about a PaymentIntent's
- * final status. Stripe calls this directly (not through a user's browser),
- * so there is no JWT on this request - it's authenticated instead by the
- * Stripe-Signature header, verified against the webhook signing secret.
+ * Receives Stripe's asynchronous notifications about a Checkout
+ * Session's outcome. Stripe calls this directly (not through a user's
+ * browser), so there is no JWT on this request - it's authenticated
+ * instead by the Stripe-Signature header, verified against the webhook
+ * signing secret.
  * <p>
  * This path must be added to api-gateway's PUBLIC_ANY_METHOD list (or
  * this service needs to be reachable directly by Stripe, bypassing the
@@ -57,14 +58,18 @@ public class PaymentWebhookController {
         StripeObject stripeObject = event.getDataObjectDeserializer().getObject().orElse(null);
 
         switch (event.getType()) {
-            case "payment_intent.succeeded" -> {
-                if (stripeObject instanceof PaymentIntent intent) {
-                    paymentService.applyStripeWebhookResult(intent.getId(), true);
+            // Fired when the customer successfully completes payment on
+            // the hosted Checkout page.
+            case "checkout.session.completed" -> {
+                if (stripeObject instanceof Session session) {
+                    paymentService.applyStripeCheckoutResult(session.getId(), session.getPaymentIntent(), true);
                 }
             }
-            case "payment_intent.payment_failed" -> {
-                if (stripeObject instanceof PaymentIntent intent) {
-                    paymentService.applyStripeWebhookResult(intent.getId(), false);
+            // Fired when the Checkout Session's payment window closes
+            // (e.g. 24h) without the customer ever paying.
+            case "checkout.session.expired" -> {
+                if (stripeObject instanceof Session session) {
+                    paymentService.applyStripeCheckoutResult(session.getId(), session.getPaymentIntent(), false);
                 }
             }
             default -> log.debug("Ignoring unhandled Stripe event type: {}", event.getType());

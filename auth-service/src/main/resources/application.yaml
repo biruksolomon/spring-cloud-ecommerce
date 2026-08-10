@@ -25,3 +25,14 @@ server:
 jwt:
   secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidationPurposesOnlyForDevelopmentAndTestingEnvironment}
   expiration: 3600000
+
+# Seeds one ADMIN account on startup (see AdminSeeder). No password
+# default on purpose - leave ADMIN_SEED_PASSWORD unset to skip seeding
+# entirely, e.g. in an environment where admins are managed another way.
+admin:
+  seed:
+    enabled: ${ADMIN_SEED_ENABLED:true}
+    email: ${ADMIN_SEED_EMAIL:admin@example.com}
+    password: ${ADMIN_SEED_PASSWORD:testpassword}
+    first-name: ${ADMIN_SEED_FIRST_NAME:System}
+    last-name: ${ADMIN_SEED_LAST_NAME:Admin}

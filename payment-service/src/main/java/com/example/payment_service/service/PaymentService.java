@@ -9,9 +9,10 @@ import com.example.payment_service.exception.PaymentNotFoundException;
 import com.example.payment_service.exception.UnauthorizedPaymentAccessException;
 import com.example.payment_service.repository.PaymentRepository;
 import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,15 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentEventPublisher paymentEventPublisher;
 
+    // Where Stripe sends the customer back to after they pay/cancel on
+    // the hosted Checkout page. Stripe appends its own query params, so
+    // the app-provided URLs are just a base page in the frontend.
+    @Value("${stripe.success-url}")
+    private String successUrl;
+
+    @Value("${stripe.cancel-url}")
+    private String cancelUrl;
+
     public PaymentService(PaymentRepository paymentRepository, PaymentEventPublisher paymentEventPublisher) {
         this.paymentRepository = paymentRepository;
         this.paymentEventPublisher = paymentEventPublisher;
@@ -37,7 +47,8 @@ public class PaymentService {
 
         // Idempotency guard: if we've already recorded a payment for this
         // orderId (e.g. this is a Kafka-redelivered duplicate of a message
-        // we already handled), don't charge again - just stop here.
+        // we already handled), don't create a second checkout session -
+        // just stop here.
         if (paymentRepository.findByOrderId(event.getOrderId()).isPresent()) {
             log.info("Payment already processed for orderId {}, skipping", event.getOrderId());
             return;
@@ -50,21 +61,18 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
 
         try {
-            PaymentIntent intent = charge(event);
-            payment.setStripePaymentIntentId(intent.getId());
+            Session session = createCheckoutSession(event);
+            payment.setStripeCheckoutSessionId(session.getId());
+            payment.setCheckoutUrl(session.getUrl());
 
-            // "succeeded" is what a confirmed off_session PaymentIntent
-            // settles to immediately in test mode with a test payment
-            // method. In a real checkout the customer confirms the
-            // PaymentIntent client-side (Stripe Elements) and this service
-            // would instead create it unconfirmed and let the
-            // payment_intent.succeeded/payment_intent.payment_failed
-            // webhook (see PaymentWebhookController) be the source of
-            // truth - a card can require 3D Secure or otherwise not
-            // settle synchronously.
-            payment.setStatus("succeeded".equals(intent.getStatus()) ? PaymentStatus.SUCCESS : PaymentStatus.FAILED);
+            // Unlike an auto-confirmed, backend-only charge, a Checkout
+            // Session doesn't settle synchronously - the customer still
+            // has to open checkoutUrl and pay. Status stays PENDING until
+            // the checkout.session.completed webhook (see
+            // PaymentWebhookController) reports the outcome.
+            payment.setStatus(PaymentStatus.PENDING);
         } catch (StripeException e) {
-            log.error("Stripe charge failed for orderId {}: {}", event.getOrderId(), e.getMessage());
+            log.error("Failed to create Stripe checkout session for orderId {}: {}", event.getOrderId(), e.getMessage());
             payment.setStatus(PaymentStatus.FAILED);
         }
 
@@ -79,23 +87,29 @@ public class PaymentService {
         ));
     }
 
-    private PaymentIntent charge(OrderCreatedEvent event) throws StripeException {
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount(toCents(event.getTotalPrice()))
-                .setCurrency("usd")
-                // Stripe's built-in test payment method - always succeeds
-                // in test mode. A real checkout would instead pass the
-                // PaymentMethod id collected from Stripe Elements on the
-                // frontend, and would not set confirm/off_session the way
-                // this backend-only demo does.
-                .setPaymentMethod("pm_card_visa")
-                .setConfirm(true)
-                .setOffSession(true)
+    private Session createCheckoutSession(OrderCreatedEvent event) throws StripeException {
+        SessionCreateParams params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setSuccessUrl(successUrl + "?orderId=" + event.getOrderId())
+                .setCancelUrl(cancelUrl + "?orderId=" + event.getOrderId())
+                .addLineItem(
+                        SessionCreateParams.LineItem.builder()
+                                .setQuantity(1L)
+                                .setPriceData(
+                                        SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency("usd")
+                                                .setUnitAmount(toCents(event.getTotalPrice()))
+                                                .setProductData(
+                                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                .setName("Order #" + event.getOrderId())
+                                                                .build())
+                                                .build())
+                                .build())
                 .putMetadata("orderId", String.valueOf(event.getOrderId()))
                 .putMetadata("userId", String.valueOf(event.getUserId()))
                 .build();
 
-        return PaymentIntent.create(params);
+        return Session.create(params);
     }
 
     // Stripe wants a whole-number amount in the currency's smallest unit
@@ -138,16 +152,23 @@ public class PaymentService {
         return paymentRepository.findAll(pageable);
     }
 
-    // Called by PaymentWebhookController when Stripe confirms a
-    // PaymentIntent's final status asynchronously (e.g. after 3D Secure
-    // completes, for a flow that doesn't settle synchronously like the
-    // off_session charge above does). Idempotent: a status that's already
-    // terminal is left alone, so a redelivered webhook can't undo it.
-    public void applyStripeWebhookResult(String stripePaymentIntentId, boolean succeeded) {
-        paymentRepository.findByStripePaymentIntentId(stripePaymentIntentId).ifPresentOrElse(payment -> {
+    // Called by PaymentWebhookController once Stripe reports a
+    // Checkout Session's outcome (checkout.session.completed /
+    // checkout.session.expired). Looks the payment up by the session id
+    // we stored when the session was created, records the PaymentIntent
+    // id Stripe generated behind the scenes (needed if we ever get a
+    // payment_intent.* event for the same charge), and moves the status
+    // to a terminal state. Idempotent: a status that's already terminal
+    // is left alone, so a redelivered webhook can't undo it.
+    public void applyStripeCheckoutResult(String stripeCheckoutSessionId, String stripePaymentIntentId, boolean succeeded) {
+        paymentRepository.findByStripeCheckoutSessionId(stripeCheckoutSessionId).ifPresentOrElse(payment -> {
             if (payment.getStatus() == PaymentStatus.SUCCESS || payment.getStatus() == PaymentStatus.FAILED) {
                 log.info("Payment {} already in terminal status {}, ignoring webhook", payment.getPaymentId(), payment.getStatus());
                 return;
+            }
+
+            if (stripePaymentIntentId != null) {
+                payment.setStripePaymentIntentId(stripePaymentIntentId);
             }
 
             PaymentStatus newStatus = succeeded ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
@@ -160,7 +181,7 @@ public class PaymentService {
                     newStatus.name()
             ));
 
-            log.info("Payment {} moved to {} via Stripe webhook", payment.getPaymentId(), newStatus);
-        }, () -> log.warn("Received Stripe webhook for unknown PaymentIntent {}", stripePaymentIntentId));
+            log.info("Payment {} moved to {} via Stripe checkout webhook", payment.getPaymentId(), newStatus);
+        }, () -> log.warn("Received Stripe webhook for unknown checkout session {}", stripeCheckoutSessionId));
     }
 }

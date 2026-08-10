@@ -29,6 +29,10 @@ app:
 stripe:
   secret-key: ${STRIPE_SECRET_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  # Base pages on the frontend that Stripe redirects the customer back to
+  # after they finish (or abandon) the hosted Checkout page.
+  success-url: ${STRIPE_SUCCESS_URL:https://9302-196-188-161-180.ngrok-free.app/payment/success}
+  cancel-url: ${STRIPE_CANCEL_URL:https://9302-196-188-161-180.ngrok-free.app/payment/cancel}
 
 server:
   port: 8086
