@@ -52,6 +52,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String requestPath = request.getRequestURI();
         String method = request.getMethod();
 
+        if (isInternalInventoryEndpoint(requestPath)) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            response.getWriter().write("Not found");
+            return;
+        }
+
         // Allow public endpoints
         if (isPublicEndpoint(requestPath, method)) {
             filterChain.doFilter(request, response);
@@ -98,6 +104,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
             response.getWriter().write("Unauthorized");
         }
+    }
+
+    private boolean isInternalInventoryEndpoint(String path) {
+        return path.matches(".*/products/\\d+/(reserve|restore)");
     }
 
     private boolean isPublicEndpoint(String path, String method) {
