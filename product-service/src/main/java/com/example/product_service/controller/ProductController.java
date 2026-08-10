@@ -52,6 +52,18 @@ public class ProductController {
         return productService.getAllProducts(page, size);
     }
 
+    @PostMapping("/{id}/reserve")
+    public ResponseEntity<Void> reserve(@PathVariable Long id, @RequestParam int quantity) {
+        productService.reserve(id, quantity);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<Void> restore(@PathVariable Long id, @RequestParam int quantity) {
+        productService.restore(id, quantity);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
     public Product getProduct(@PathVariable Long id) {
         return productService.getProduct(id);

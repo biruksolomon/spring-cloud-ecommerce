@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.product_service.exception.InsufficientStockException;
 
 @Service
 public class ProductService {
@@ -48,6 +51,31 @@ public class ProductService {
     public Product getProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
+    }
+
+    @Transactional
+    public void reserve(Long productId, int quantity) {
+        validateQuantity(quantity);
+        if (!productRepository.existsById(productId)) {
+            throw new ProductNotFoundException(productId);
+        }
+        if (productRepository.reserve(productId, quantity) == 0) {
+            throw new InsufficientStockException(productId, quantity);
+        }
+    }
+
+    @Transactional
+    public void restore(Long productId, int quantity) {
+        validateQuantity(quantity);
+        if (productRepository.restore(productId, quantity) == 0) {
+            throw new ProductNotFoundException(productId);
+        }
+    }
+
+    private void validateQuantity(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
     }
 
     private void applyRequest(Product product, ProductRequest request) {
