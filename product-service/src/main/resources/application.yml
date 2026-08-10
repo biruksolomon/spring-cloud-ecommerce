@@ -14,6 +14,9 @@ spring:
     show-sql: true
 
 
+app:
+  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
+
 server:
   port: 8081
 

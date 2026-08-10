@@ -1,6 +1,7 @@
 package com.example.order_service.client;
 
 import com.example.order_service.dto.ProductResponseDto;
+import com.example.order_service.config.ProductClientConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -8,7 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(
-        name = "product-service"
+        name = "product-service",
+        configuration = ProductClientConfig.class
 //        , url = "http://localhost:8081"
 )
 public interface ProductClient {

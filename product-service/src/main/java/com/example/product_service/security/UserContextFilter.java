@@ -5,7 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -30,10 +32,24 @@ public class UserContextFilter extends OncePerRequestFilter {
     public static final String USER_ID_ATTR = "userId";
     public static final String USER_EMAIL_ATTR = "userEmail";
     public static final String USER_ROLE_ATTR = "userRole";
+    private static final String INTERNAL_TOKEN_HEADER = "X-Internal-Service-Token";
+
+    @Value("${app.internal-service-token}")
+    private String internalServiceToken;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        if (isInventoryMutation(request)) {
+            String suppliedToken = request.getHeader(INTERNAL_TOKEN_HEADER);
+            if (suppliedToken == null || !java.security.MessageDigest.isEqual(
+                    suppliedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    internalServiceToken.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+                response.sendError(HttpStatus.FORBIDDEN.value(), "Internal service authentication required");
+                return;
+            }
+        }
 
         String userIdHeader = request.getHeader("X-User-Id");
         if (userIdHeader != null) {
@@ -59,5 +75,11 @@ public class UserContextFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isInventoryMutation(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return "POST".equalsIgnoreCase(request.getMethod())
+                && (path.matches(".*/products/\\d+/reserve") || path.matches(".*/products/\\d+/restore"));
     }
 }
