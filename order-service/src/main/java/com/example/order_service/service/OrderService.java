@@ -55,6 +55,9 @@ public class OrderService {
             fallbackMethod = "productFallback"
     )
     public Order createOrder(Order order){
+        if (order.getQuantity() == null || order.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
 
        /* ProductResponseDto productResponseDto = restTemp.getForObject(
                 "http://localhost:8081/products/"+order.getProductId(),ProductResponseDto.class
@@ -62,8 +65,12 @@ public class OrderService {
 
         ProductResponseDto productResponseDto = productClient.getProduct(order.getProductId());
 //        order.builder().totalPrice(productResponseDto.getPrice()* order.getQuantity());
-        assert productResponseDto != null;
-        order.setTotalPrice(productResponseDto.getPrice()* order.getQuantity());
+        if (productResponseDto == null || productResponseDto.getPrice() == null) {
+            throw new IllegalStateException("Product details are unavailable");
+        }
+        productClient.reserve(order.getProductId(), order.getQuantity());
+        order.setTotalPrice(productResponseDto.getPrice() * order.getQuantity());
+        order.setStatus("PENDING");
 
         Order savedorder = orderRepository.save(order);
 
@@ -159,6 +166,15 @@ public class OrderService {
         order.setStatus(newStatus);
         order.setUpdatedAt(System.currentTimeMillis());
         orderRepository.save(order);
+
+        if ("CANCELLED".equals(newStatus)) {
+            try {
+                productClient.restore(order.getProductId(), order.getQuantity());
+            } catch (RuntimeException ex) {
+                log.error("Failed to restore inventory for cancelled order {}", orderId, ex);
+                throw ex;
+            }
+        }
 
         log.info("Order {} moved to status {} following payment result {}", orderId, newStatus, paymentStatus);
     }
