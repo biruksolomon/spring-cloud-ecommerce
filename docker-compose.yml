@@ -163,6 +163,10 @@ services:
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
       INTERNAL_SERVICE_TOKEN: *internal-service-token
+      # Cloudinary account for product image uploads - see .env.example.
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
     ports:
       - "8081:8081"
     depends_on:
