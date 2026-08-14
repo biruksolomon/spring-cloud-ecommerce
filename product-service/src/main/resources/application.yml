@@ -13,9 +13,22 @@ spring:
 
     show-sql: true
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 app:
   internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
+
+# Cloudinary account used for product image uploads (POST
+# /products/{id}/image). From cloudinary.com/console - unset by default:
+# CloudinaryImageStorageService fails fast with a clear error rather than
+# the app crashing on startup wherever these aren't configured.
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
 
 server:
   port: 8081
