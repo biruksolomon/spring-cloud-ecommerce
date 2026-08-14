@@ -35,6 +35,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_ANY_METHOD = Arrays.asList(
             "/auth/register",
             "/auth/login",
+            // Sign in with a Google ID token the frontend already obtained
+            // from Google's own Sign-In SDK - there is no Authorization
+            // header to check yet, that's what this call produces.
+            "/auth/google",
+            // Exchanges a refresh token for a new access token - the access
+            // token that would normally prove identity has likely already
+            // expired by the time a client needs to call this, so no
+            // Authorization header is required or checked here either.
+            "/auth/refresh",
             // Called by Stripe, not by a logged-in user - authenticated by
             // its own Stripe-Signature header instead, verified inside
             // payment-service's PaymentWebhookController.
