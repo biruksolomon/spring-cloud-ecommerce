@@ -1,6 +1,5 @@
 package com.example.auth_service.dto;
 
-import com.example.auth_service.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,13 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthResponse {
-    private Long userId;
-    private String email;
+public class RefreshResponse {
     private String token;
     private long expiresIn;
     private String refreshToken;
-    private String firstName;
-    private String lastName;
-    private Role role;
 }
