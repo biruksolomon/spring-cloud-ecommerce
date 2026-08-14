@@ -47,5 +47,15 @@ eureka:
 server:
   port: 8080
 
-jwt:
-  secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidationPurposesOnlyForDevelopmentAndTestingEnvironment}
+# Public half of auth-service's RS256 key pair - enough to verify a
+# token's signature, not to mint one. Must match auth-service's
+# rsa.public-key exactly; never set RSA_PRIVATE_KEY here.
+rsa:
+  public-key: ${RSA_PUBLIC_KEY:MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0RIZLtH32m2NXbLdLlaC4dGCYf45dy69ZjQoPLx6+HWZGCSYkcJxZPLGf8WeHhQhuf6uSaS6dnJYvadCSwC06d2Y2YtGpzcV7MTK9x4W4PIiHRrYZLZxyOfSo+6eW3cPFs0Q+NGm2UzFPr6TTF2KdSb0pxFAuTTbzIh7c20mLgUfL4Z/wqSRjIhJhAtJ8PNmnI0D+jsCSTXgKq11sLJAh1ImsLmxthXnQFwSIaNThoPT2R2nuz/cB0HDJdugu/2esExVXeMa8BBGkTM/H4LBBDpXxRxMwvbhAdYKeBYm7GuD3BYVAqYyyQtJIudi8bLCRjZxA+rj47saHb4gvvavRwIDAQAB}
+
+# Stamped onto every request the gateway forwards downstream (alongside
+# X-User-Id/X-User-Email/X-User-Role) so each service can tell a
+# gateway-forwarded request from a direct call with forged identity
+# headers. Must match every downstream service's app.internal-service-token.
+app:
+  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}

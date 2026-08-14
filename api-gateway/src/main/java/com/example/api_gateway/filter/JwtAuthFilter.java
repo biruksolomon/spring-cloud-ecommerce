@@ -3,6 +3,7 @@ package com.example.api_gateway.filter;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -21,6 +22,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtProvider jwtProvider;
+
+    // Stamped onto every request forwarded downstream, alongside the
+    // X-User-* headers, so each service's UserContextFilter can tell a
+    // gateway-forwarded request from one that reached it directly with
+    // forged identity headers. Downstream services reject X-User-* headers
+    // that arrive without this token - see their UserContextFilter classes.
+    @Value("${app.internal-service-token}")
+    private String internalServiceToken;
 
     // Endpoints that never require a token, regardless of method.
     private static final List<String> PUBLIC_ANY_METHOD = Arrays.asList(
@@ -92,11 +101,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             // Add headers for downstream services - these travel over the
-            // network with the proxied request, unlike a servlet attribute
+            // network with the proxied request, unlike a servlet attribute.
+            // X-Internal-Service-Token proves to the receiving service that
+            // the X-User-* headers actually came from this gateway, not
+            // from a caller that reached the service directly.
             CustomRequestWrapper wrappedRequest = new CustomRequestWrapper(request);
             wrappedRequest.addHeader("X-User-Id", String.valueOf(userId));
             wrappedRequest.addHeader("X-User-Email", email);
             wrappedRequest.addHeader("X-User-Role", role);
+            wrappedRequest.addHeader("X-Internal-Service-Token", internalServiceToken);
 
             filterChain.doFilter(wrappedRequest, response);
         } catch (Exception e) {
