@@ -63,6 +63,16 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!-- Google Sign-In: verifies ID tokens issued by Google for
+		     POST /auth/google. Brings its own HTTP/JSON transport
+		     (google-http-client, google-http-client-gson), so no
+		     extra dependencies are needed for GoogleIdTokenVerifier. -->
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>2.7.0</version>
+		</dependency>
+
 		<!-- JWT -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

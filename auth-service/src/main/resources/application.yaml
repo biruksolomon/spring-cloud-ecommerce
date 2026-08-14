@@ -47,6 +47,14 @@ jwt:
   # (see RefreshTokenService) - this is the pair's actual session lifetime.
   refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
 
+# OAuth2 client ID for "Sign in with Google" (POST /auth/google). This is
+# the Web/OAuth client ID from Google Cloud Console - GoogleTokenVerifier
+# rejects any ID token that wasn't issued for this exact audience. Unset
+# by default: /auth/google fails fast with a clear error rather than
+# silently trusting tokens for no audience in particular until this is set.
+google:
+  client-id: ${GOOGLE_CLIENT_ID:}
+
 # Shared secret that proves a request carrying X-User-* identity headers
 # actually came from api-gateway, not from a caller hitting this service
 # directly. Every downstream service (and this one, for /auth/user/{id}
