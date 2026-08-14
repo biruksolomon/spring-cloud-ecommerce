@@ -137,6 +137,12 @@ services:
       RSA_PRIVATE_KEY: *rsa-private-key
       RSA_PUBLIC_KEY: *rsa-public-key
       INTERNAL_SERVICE_TOKEN: *internal-service-token
+      # OAuth2 Web client ID for "Sign in with Google" (POST /auth/google).
+      # Must be set in the shell/.env before `docker-compose up` - see
+      # GOOGLE_CLIENT_ID below. Left unset here on purpose otherwise:
+      # GoogleTokenVerifier fails fast rather than trusting an unscoped
+      # audience.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
       - "8084:8084"
     depends_on:
