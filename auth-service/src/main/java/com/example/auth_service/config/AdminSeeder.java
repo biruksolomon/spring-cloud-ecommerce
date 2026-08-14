@@ -1,5 +1,6 @@
 package com.example.auth_service.config;
 
+import com.example.auth_service.entity.AuthProvider;
 import com.example.auth_service.entity.Role;
 import com.example.auth_service.entity.User;
 import com.example.auth_service.repository.UserRepository;
@@ -72,6 +73,7 @@ public class AdminSeeder {
                     .lastName(adminLastName)
                     .active(true)
                     .role(Role.ADMIN)
+                    .provider(AuthProvider.LOCAL)
                     .createdAt(LocalDateTime.now())
                     .build();
 
