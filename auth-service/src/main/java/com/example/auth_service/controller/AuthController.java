@@ -1,6 +1,7 @@
 package com.example.auth_service.controller;
 
 import com.example.auth_service.dto.AuthResponse;
+import com.example.auth_service.dto.GoogleAuthRequest;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.LogoutRequest;
 import com.example.auth_service.dto.RefreshRequest;
@@ -35,6 +36,16 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    // Sign in (or, on first use, sign up) with a Google ID token the
+    // frontend already obtained from Google's own sign-in SDK. Returns the
+    // exact same shape as /login and /register - an access + refresh token
+    // pair - so the frontend treats this as just another way to arrive at
+    // an authenticated session.
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@Valid @RequestBody GoogleAuthRequest request) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
     }
 
     // Exchanges a refresh token for a new access token + a new (rotated)
