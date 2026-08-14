@@ -12,17 +12,32 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * Reads the X-User-Id / X-User-Email / X-User-Role headers forwarded by the
  * api-gateway's JwtAuthFilter and exposes them as request attributes, the
  * same pattern order-service's UserContextFilter uses.
  * <p>
- * This filter never rejects a request by itself - it just makes the caller's
- * identity available. Whether an endpoint requires a given role is decided
- * by {@link RoleAuthorizationInterceptor} based on the {@link RequireRole}
- * annotation. A request with no headers at all (e.g. an anonymous GET that
- * the gateway let through) simply proceeds with no user context set.
+ * This filter never rejects a request for missing user context by itself -
+ * it just makes the caller's identity available when present. Whether an
+ * endpoint requires a given role is decided by
+ * {@link RoleAuthorizationInterceptor} based on the {@link RequireRole}
+ * annotation. A request with no identity headers at all (e.g. an anonymous
+ * GET that the gateway let through) simply proceeds with no user context set.
+ * <p>
+ * Trust boundary, two rules:
+ *  1. /products/{id}/reserve and /restore always require a valid
+ *     X-Internal-Service-Token, since these are pure service-to-service
+ *     calls (order-service calling product-service directly, bypassing
+ *     the gateway) that never carry X-User-* headers at all - this is
+ *     the original check, unchanged.
+ *  2. Any request carrying X-User-* headers (regardless of path) now also
+ *     requires that same token. Previously only rule 1 existed, which left
+ *     every other endpoint trusting X-User-Id/X-User-Role from any direct
+ *     caller - a request reaching product-service without going through
+ *     the gateway could simply set X-User-Role: ADMIN and be believed.
  */
 @Slf4j
 @Component
@@ -41,14 +56,15 @@ public class UserContextFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (isInventoryMutation(request)) {
-            String suppliedToken = request.getHeader(INTERNAL_TOKEN_HEADER);
-            if (suppliedToken == null || !java.security.MessageDigest.isEqual(
-                    suppliedToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                    internalServiceToken.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
-                response.sendError(HttpStatus.FORBIDDEN.value(), "Internal service authentication required");
-                return;
-            }
+        boolean claimsIdentity = request.getHeader("X-User-Id") != null
+                || request.getHeader("X-User-Email") != null
+                || request.getHeader("X-User-Role") != null;
+
+        boolean requiresInternalToken = claimsIdentity || isInventoryMutation(request);
+
+        if (requiresInternalToken && !hasValidInternalToken(request)) {
+            response.sendError(HttpStatus.FORBIDDEN.value(), "This request requires a valid internal service token");
+            return;
         }
 
         String userIdHeader = request.getHeader("X-User-Id");
@@ -75,6 +91,16 @@ public class UserContextFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean hasValidInternalToken(HttpServletRequest request) {
+        String supplied = request.getHeader(INTERNAL_TOKEN_HEADER);
+        if (supplied == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                supplied.getBytes(StandardCharsets.UTF_8),
+                internalServiceToken.getBytes(StandardCharsets.UTF_8));
     }
 
     private boolean isInventoryMutation(HttpServletRequest request) {

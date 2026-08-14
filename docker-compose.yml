@@ -11,7 +11,13 @@ version: "3.8"
 #   API Gateway:        http://localhost:8080
 #   Kafka UI:            http://localhost:8085
 
-x-jwt-secret: &jwt-secret mySecretKeyForJWTTokenGenerationAndValidationPurposesOnlyForDevelopmentAndTestingEnvironment
+# Dev-only key material. Real, working values checked in so the stack
+# runs out of the box - replace all three in any shared or production
+# environment (see the comments on each service's application.yaml for
+# what would need to change).
+x-rsa-private-key: &rsa-private-key MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDREhku0ffabY1dst0uVoLh0YJh/jl3Lr1mNCg8vHr4dZkYJJiRwnFk8sZ/xZ4eFCG5/q5JpLp2cli9p0JLALTp3ZjZi0anNxXsxMr3Hhbg8iIdGthktnHI59Kj7p5bdw8WzRD40abZTMU+vpNMXYp1JvSnEUC5NNvMiHtzbSYuBR8vhn/CpJGMiEmEC0nw82acjQP6OwJJNeAqrXWwskCHUiawubG2FedAXBIho1OGg9PZHae7P9wHQcMl26C7/Z6wTFVd4xrwEEaRMz8fgsEEOlfFHEzC9uEB1gp4Fibsa4PcFhUCpjLJC0ki52LxssJGNnED6uPjuxodviC+9q9HAgMBAAECggEAJb00moUATodz+zPsRQ8MtSKSfIndaawgODC2CrCjKfJgXkFM4RLOUUCZoDrV3ewYYnCcmWKI3hSp/CITD2LjRUvg6XQAnvKMnJ6xXIYr7xMGIWbVJOjiBTgDh9/s6enF6YG+zItbqOH4wOi5whEoixkrFHVCz6vA+VyxnBZZy/iBGs8/VDV0lbvLTFYWGm+F6c1lKGARri+5zu+gVWWxUt92oBd/pHIWPPS++jJLjKUi3ueOt3oK3QsPpXlsJzUOvDCguIPqze4Q8zrLKlftnXxzWxpCUP4L4hg0sCSZki27fmIke1eSNfw635zFhdjAafdwZnlLn4SbSCpz2+89kQKBgQDyHutJ/feDwsHBP6pKugT1Et0Yh/+HsdQRdbK1D10N6WdZ8iTJ2nue1dZnTdmAJ0cVpTX+L4vyYgBtfpCFLbUlydfRuDbIDhhOkvmgLbaS06jAjgPE98Axp5190w26MGnQbw3zHWVz7TBeALcS0AlQ2zd9dHNCsP/eCAx+vYDaAwKBgQDdDizM3quQrxBNUTP592eekDzGUS7tMNJg2TeIeWKOOltLejJoGNl04pou8Kv31ifDQ/7pZ4EjW3b8knPioRVnQiKyGtxsHj0RSKDr0/9WigbRQ1oyzviaUL2eKlmfs37fhogMe7E9Sef4bIIALinvY9CMKrfw/Q85NijTKcX0bQKBgBfcuj25nPpMaIIePy9MNA7fRBEV3jZGbWsnGWzEzdwAI+J2fe+y67oUwyO9RXFe7Z+Rf8fEcdt6kyY3chDeF1tZED8oE6YV1Ylw7M8/kh3YZGpN1MtFy5hZN6ld8p1mBhe3yj0qqYQKXVj2YxSkkjZ41Hg10OJCxYThcDHRhXB3AoGAKqvw0/9r6PsST4qMWQV8OCypvrKvN1REWDO2N58O+lujgfdtwZCCccDIeKU23Rm3BUeb7pxvXk7qsijnO+lSg2NN5UmwISLZMPvvLHb5BFCSrlStFb/EV62cXOrZ8C0rIaULoDVEaotYvyjbE4PVzoNbH6OjbF69UJL24IRg1SUCgYEA1lPMnmzaj0+cB2VcnQTkcQiQDkCjbkxjjXjvWlr0sc0hzhCR7vvmdbrdlMgT+0ecKOKGU3ciP2M4iExJW9UiMa1mNv5wnbGOUigRF5ahjyYuuWE8p2aWc3q+hGnA08Y16OMBPuIn7kt2H4uelnIUDZ3OxauMR9chRQcnLfBJ5Eo=
+x-rsa-public-key: &rsa-public-key MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0RIZLtH32m2NXbLdLlaC4dGCYf45dy69ZjQoPLx6+HWZGCSYkcJxZPLGf8WeHhQhuf6uSaS6dnJYvadCSwC06d2Y2YtGpzcV7MTK9x4W4PIiHRrYZLZxyOfSo+6eW3cPFs0Q+NGm2UzFPr6TTF2KdSb0pxFAuTTbzIh7c20mLgUfL4Z/wqSRjIhJhAtJ8PNmnI0D+jsCSTXgKq11sLJAh1ImsLmxthXnQFwSIaNThoPT2R2nuz/cB0HDJdugu/2esExVXeMa8BBGkTM/H4LBBDpXxRxMwvbhAdYKeBYm7GuD3BYVAqYyyQtJIudi8bLCRjZxA+rj47saHb4gvvavRwIDAQAB
+x-internal-service-token: &internal-service-token test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9
 
 networks:
   ecommerce-net:
@@ -105,7 +111,8 @@ services:
     container_name: api-gateway
     environment:
       EUREKA_URI: http://discovery-server:8761/eureka
-      JWT_SECRET: *jwt-secret
+      RSA_PUBLIC_KEY: *rsa-public-key
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
       - "8080:8080"
     depends_on:
@@ -127,7 +134,9 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
-      JWT_SECRET: *jwt-secret
+      RSA_PRIVATE_KEY: *rsa-private-key
+      RSA_PUBLIC_KEY: *rsa-public-key
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
       - "8084:8084"
     depends_on:
@@ -147,6 +156,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
       - "8081:8081"
     depends_on:
@@ -167,6 +177,7 @@ services:
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
       - "8082:8082"
     depends_on:
@@ -194,6 +205,7 @@ services:
       # alongside docker-compose.yml, do not commit real values.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
       - "8086:8086"
     depends_on:
