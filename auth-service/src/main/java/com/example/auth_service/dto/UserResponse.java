@@ -1,5 +1,6 @@
 package com.example.auth_service.dto;
 
+import com.example.auth_service.entity.AuthProvider;
 import com.example.auth_service.entity.Role;
 import com.example.auth_service.entity.User;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ public class UserResponse {
     private Boolean active;
     private Role role;
     private LocalDateTime createdAt;
+    private AuthProvider provider;
 
     public static UserResponse from(User user) {
         return UserResponse.builder()
@@ -35,6 +37,7 @@ public class UserResponse {
                 .active(user.getActive())
                 .role(user.getRole())
                 .createdAt(user.getCreatedAt())
+                .provider(user.getProvider())
                 .build();
     }
 }
