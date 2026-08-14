@@ -23,7 +23,12 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    // Nullable on purpose: an account created via Google sign-in has no
+    // local password at all (see AuthService.createGoogleUser). Any code
+    // that checks a password against this field must handle null - see
+    // AuthService.login(), which rejects with InvalidCredentialsException
+    // instead of passing null into the password encoder.
+    @Column(nullable = true)
     private String password;
 
     @Column(nullable = false)
@@ -44,4 +49,20 @@ public class User {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt ;
+
+    // How this account authenticates. DB-level default keeps this NOT
+    // NULL migration safe against rows that existed before this column
+    // was added (same reasoning as `role` above) - every pre-existing row
+    // is a password account, so LOCAL is the correct backfill value.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @ColumnDefault("'LOCAL'")
+    private AuthProvider provider;
+
+    // Google's stable per-user subject ("sub") claim. Null for accounts
+    // that have never signed in with Google. Unique (not nullable=false,
+    // since most rows will be null) so the same Google account can never
+    // back two different users.
+    @Column(unique = true)
+    private String googleId;
 }
