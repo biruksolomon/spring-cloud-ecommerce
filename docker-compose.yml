@@ -249,3 +249,26 @@ services:
         condition: service_started
     networks:
       - ecommerce-net
+
+  delivery-service:
+    build: ./delivery-service
+    container_name: delivery-service
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      EUREKA_URI: http://discovery-server:8761/eureka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
+    ports:
+      - "8087:8087"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - ecommerce-net
