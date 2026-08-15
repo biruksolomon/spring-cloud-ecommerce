@@ -29,6 +29,7 @@ app:
   internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
   kafka:
     order-topic: order-events
+    order-status-topic: order-status-events
 
 server:
   port: 8082
@@ -53,5 +54,4 @@ resilience4j:
         wait-duration-in-open-state: 30s
 
         permitted-number-of-calls-in-half-open-state: 3
-
 
