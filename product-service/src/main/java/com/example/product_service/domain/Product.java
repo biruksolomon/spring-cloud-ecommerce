@@ -34,4 +34,11 @@ public class Product {
     @JsonIgnore
     private String imagePublicId;
 
+    // Warehouse/origin address this product ships from. Optional - a
+    // product created without one simply has no shipping origin until an
+    // admin sets it via update; delivery-service treats a delivery whose
+    // origin is blank as "unset" rather than failing.
+    @Embedded
+    private ProductAddress address = new ProductAddress();
+
 }
