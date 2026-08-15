@@ -25,7 +25,7 @@ public class OrderController {
     // Any authenticated customer can create their own order - not role-gated,
     // ownership is set from the token (X-User-Id), not the request body.
     @PostMapping
-    public Order createOrder(@RequestBody Order order, HttpServletRequest request){
+    public Order createOrder(@Valid @RequestBody Order order, HttpServletRequest request){
         Long userId = (Long) request.getAttribute("userId");
         if (userId != null) {
             order.setUserId(userId);

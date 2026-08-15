@@ -2,6 +2,9 @@ package com.example.order_service.domin;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,8 +20,11 @@ public class Order {
     @Column(nullable = false)
     private Long userId;
 
+    @NotNull(message = "productId is required")
     private Long productId;
 
+    @NotNull(message = "quantity is required")
+    @Positive(message = "quantity must be positive")
     private Integer quantity;
 
     private Double totalPrice;
@@ -31,4 +37,12 @@ public class Order {
 
     @Column
     private Long updatedAt;
+
+    // Where this order should be shipped. Required on creation so
+    // delivery-service always has a destination to open a shipment
+    // against - see OrderController#createOrder (@Valid).
+    @Valid
+    @NotNull(message = "deliveryAddress is required")
+    @Embedded
+    private DeliveryAddress deliveryAddress;
 }
