@@ -1,7 +1,4 @@
 spring:
-  application:
-    name: order-service
-
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/order_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USERNAME:root}
@@ -10,7 +7,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-
     show-sql: true
 
   rabbitmq:
@@ -26,7 +22,6 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 app:
-  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
   kafka:
     order-topic: order-events
     order-status-topic: order-status-events
@@ -34,24 +29,12 @@ app:
 server:
   port: 8082
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
-
-
 resilience4j:
   circuitbreaker:
     instances:
       productService:
-
         sliding-window-size: 5
-
         minimum-number-of-calls: 5
-
         failure-rate-threshold: 50
-
         wait-duration-in-open-state: 30s
-
         permitted-number-of-calls-in-half-open-state: 3
-

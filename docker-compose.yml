@@ -103,6 +103,29 @@ services:
       - ecommerce-net
 
   # ---------------------------------------------------------------
+  # Centralized config (Spring Cloud Config Server)
+  # ---------------------------------------------------------------
+  # Serves every service's application config from ../config-repo - a
+  # separate git repo mounted read-only below. See config-repo/README.md.
+  # Point CONFIG_REPO_URI at a real git remote instead for shared/prod use.
+
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    environment:
+      EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_REPO_URI: file:///config-repo
+      INTERNAL_SERVICE_TOKEN: *internal-service-token
+    volumes:
+      - ./config-repo:/config-repo:ro
+    ports:
+      - "8888:8888"
+    depends_on:
+      - discovery-server
+    networks:
+      - ecommerce-net
+
+  # ---------------------------------------------------------------
   # Gateway
   # ---------------------------------------------------------------
 
@@ -110,6 +133,7 @@ services:
     build: ./api-gateway
     container_name: api-gateway
     environment:
+      CONFIG_SERVER_URI: http://config-server:8888
       EUREKA_URI: http://discovery-server:8761/eureka
       RSA_PUBLIC_KEY: *rsa-public-key
       INTERNAL_SERVICE_TOKEN: *internal-service-token
@@ -117,6 +141,7 @@ services:
       - "8080:8080"
     depends_on:
       - discovery-server
+      - config-server
       - auth-service
     networks:
       - ecommerce-net
@@ -134,6 +159,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       RSA_PRIVATE_KEY: *rsa-private-key
       RSA_PUBLIC_KEY: *rsa-public-key
       INTERNAL_SERVICE_TOKEN: *internal-service-token
@@ -150,6 +176,8 @@ services:
         condition: service_healthy
       discovery-server:
         condition: service_started
+      config-server:
+        condition: service_started
     networks:
       - ecommerce-net
 
@@ -162,6 +190,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       INTERNAL_SERVICE_TOKEN: *internal-service-token
       # Cloudinary account for product image uploads - see .env.example.
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
@@ -173,6 +202,8 @@ services:
       mysql:
         condition: service_healthy
       discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
     networks:
       - ecommerce-net
@@ -186,6 +217,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
@@ -196,6 +228,8 @@ services:
       kafka:
         condition: service_healthy
       discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
     networks:
       - ecommerce-net
@@ -209,6 +243,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       # Test-mode keys from dashboard.stripe.com/test/apikeys and
       # dashboard.stripe.com/test/webhooks - set these in a .env file
@@ -225,6 +260,8 @@ services:
         condition: service_healthy
       discovery-server:
         condition: service_started
+      config-server:
+        condition: service_started
     networks:
       - ecommerce-net
 
@@ -237,6 +274,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8083:8083"
@@ -246,6 +284,8 @@ services:
       kafka:
         condition: service_healthy
       discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
     networks:
       - ecommerce-net
@@ -259,6 +299,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       EUREKA_URI: http://discovery-server:8761/eureka
+      CONFIG_SERVER_URI: http://config-server:8888
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       INTERNAL_SERVICE_TOKEN: *internal-service-token
     ports:
@@ -269,6 +310,8 @@ services:
       kafka:
         condition: service_healthy
       discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
     networks:
       - ecommerce-net

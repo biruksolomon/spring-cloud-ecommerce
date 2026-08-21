@@ -1,6 +1,4 @@
 spring:
-  application:
-    name: auth-service
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USERNAME:root}
@@ -14,18 +12,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
-
 server:
   port: 8084
 
 # RS256 key pair for signing/verifying access tokens. auth-service is the
 # only service that ever loads the private key - api-gateway is configured
-# with rsa.public-key only (see api-gateway's application.yaml), so it can
-# verify tokens but never mint them.
+# with rsa.public-key only (see api-gateway.yml), so it can verify tokens
+# but never mint them.
 #
 # The defaults below are a REAL, working dev-only 2048-bit key pair,
 # generated for this project and safe only for local development - anyone
@@ -54,14 +47,6 @@ jwt:
 # silently trusting tokens for no audience in particular until this is set.
 google:
   client-id: ${GOOGLE_CLIENT_ID:}
-
-# Shared secret that proves a request carrying X-User-* identity headers
-# actually came from api-gateway, not from a caller hitting this service
-# directly. Every downstream service (and this one, for /auth/user/{id}
-# and /auth/logout-all) checks it in their UserContextFilter. Must match
-# api-gateway's app.internal-service-token exactly.
-app:
-  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
 
 # Seeds one ADMIN account on startup (see AdminSeeder). No password
 # default on purpose - leave ADMIN_SEED_PASSWORD unset to skip seeding

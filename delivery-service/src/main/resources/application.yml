@@ -1,7 +1,4 @@
 spring:
-  application:
-    name: delivery-service
-
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/delivery_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: ${DB_USERNAME:root}
@@ -19,14 +16,8 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 app:
-  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
   kafka:
     delivery-status-topic: delivery-events
 
 server:
   port: 8087
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
