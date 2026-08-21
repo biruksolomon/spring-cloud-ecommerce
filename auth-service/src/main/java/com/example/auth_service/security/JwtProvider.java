@@ -2,6 +2,7 @@ package com.example.auth_service.security;
 
 import com.example.auth_service.entity.Role;
 import io.jsonwebtoken.*;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,7 @@ public class JwtProvider {
 
     private final RsaKeyConfig rsaKeyConfig;
 
+    @Getter
     @Value("${jwt.access-token-expiration-ms:900000}")
     private long accessTokenExpirationMs;
 
@@ -45,10 +47,6 @@ public class JwtProvider {
                 .setExpiration(new Date(now.getTime() + accessTokenExpirationMs))
                 .signWith(rsaKeyConfig.getPrivateKey(), SignatureAlgorithm.RS256)
                 .compact();
-    }
-
-    public long getAccessTokenExpirationMs() {
-        return accessTokenExpirationMs;
     }
 
     public String extractRole(String token) {
