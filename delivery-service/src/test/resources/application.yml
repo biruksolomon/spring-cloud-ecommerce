@@ -1,13 +1,13 @@
 spring:
   application:
-    name: payment-service
+    name: delivery-service
 
   cloud:
     config:
       enabled: false
 
   datasource:
-    url: jdbc:h2:mem:paymentdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:deliverydb;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -26,19 +26,10 @@ spring:
 app:
   internal-service-token: test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9
   kafka:
-    payment-topic: payment-events
+    delivery-status-topic: delivery-events
 
 eureka:
   client:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-
-# stripe.secret-key/webhook-secret come from CI secrets (see
-# .github/workflows/ci.yml); success-url/cancel-url have no default and
-# only live in config-repo now, so they need a test value here too.
-stripe:
-  secret-key: ${STRIPE_SECRET_KEY:sk_test_dummy}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_dummy}
-  success-url: http://localhost/payment/success
-  cancel-url: http://localhost/payment/cancel

@@ -2,6 +2,10 @@ spring:
   application:
     name: notification-service
 
+  cloud:
+    config:
+      enabled: false
+
   datasource:
     url: jdbc:h2:mem:notificationdb;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -25,7 +29,6 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-
 
 eureka:
   client:

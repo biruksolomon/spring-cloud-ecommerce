@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: api-gateway
+
+  # Disables the Spring Cloud Config client outright for tests (belt and
+  # braces alongside "optional:" on the main config's import - this is the
+  # property ConfigServerConfigDataLoader actually checks, so it skips
+  # config-server cleanly instead of a network call that would only ever
+  # fail in CI anyway).
+  cloud:
+    config:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+# Same dev-only key pair used across the other services' test config -
+# JwtProvider requires rsa.public-key with no default, so it must be set
+# here even though this service never signs, only verifies.
+rsa:
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0RIZLtH32m2NXbLdLlaC4dGCYf45dy69ZjQoPLx6+HWZGCSYkcJxZPLGf8WeHhQhuf6uSaS6dnJYvadCSwC06d2Y2YtGpzcV7MTK9x4W4PIiHRrYZLZxyOfSo+6eW3cPFs0Q+NGm2UzFPr6TTF2KdSb0pxFAuTTbzIh7c20mLgUfL4Z/wqSRjIhJhAtJ8PNmnI0D+jsCSTXgKq11sLJAh1ImsLmxthXnQFwSIaNThoPT2R2nuz/cB0HDJdugu/2esExVXeMa8BBGkTM/H4LBBDpXxRxMwvbhAdYKeBYm7GuD3BYVAqYyyQtJIudi8bLCRjZxA+rj47saHb4gvvavRwIDAQAB
+
+app:
+  internal-service-token: test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9
