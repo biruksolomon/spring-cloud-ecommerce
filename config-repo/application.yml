@@ -1,0 +1,26 @@
+# Shared configuration for every Spring Cloud Config client in the
+# spring-cloud-ecommerce stack. Loaded first, then overridden by the
+# client's own <spring.application.name>.yml in this same repo.
+#
+# discovery-server and config-server are NOT config clients (see
+# README.md) and never receive this file.
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Shared secret every downstream service checks on the X-User-* headers
+# api-gateway forwards (see each service's UserContextFilter). Must match
+# api-gateway's own copy of this value in api-gateway.yml.
+app:
+  internal-service-token: ${INTERNAL_SERVICE_TOKEN:test-only-7f3c9a2e81b64d0fa5c7e93b18d246a9}
