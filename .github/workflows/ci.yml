@@ -15,12 +15,14 @@ jobs:
       matrix:
         service:
           - discovery-server
+          - config-server
           - api-gateway
           - auth-service
           - product-service
           - order-service
           - payment-service
           - notification-service
+          - delivery-service
 
     steps:
       - name: Checkout
@@ -73,12 +75,14 @@ jobs:
       matrix:
         service:
           - discovery-server
+          - config-server
           - api-gateway
           - auth-service
           - product-service
           - order-service
           - payment-service
           - notification-service
+          - delivery-service
 
     steps:
       - name: Checkout
