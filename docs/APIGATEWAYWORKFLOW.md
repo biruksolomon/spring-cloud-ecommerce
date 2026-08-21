@@ -125,41 +125,45 @@ This keeps `product-service`, `order-service`, `payment-service`, and `notificat
 ```mermaid
 flowchart LR
     A[👤 Client] -- login --> B[🔐 auth-service]
-    A -- Bearer JWT --> C[🚪 api-gateway]
+A -- Bearer JWT --> C[🚪 api-gateway]
 
-    subgraph Registry
-        R[🧭 discovery-server<br/>Eureka]
-    end
+subgraph Registry
+R[🧭 discovery-server<br/>Eureka]
+end
 
-    C <-. register/discover .-> R
-    B <-. register/discover .-> R
+C <-. register/discover .-> R
+B <-. register/discover .-> R
 
-    C -- X-User-* headers --> D[📦 order-service]
-    C -- X-User-* headers --> E[🛍️ product-service]
-    C -- X-User-* headers --> F[💳 payment-service]
-    C -- X-User-* headers --> G[✉️ notification-service]
+C -- X-User-* headers --> D[📦 order-service]
+C -- X-User-* headers --> E[🛍️ product-service]
+C -- X-User-* headers --> F[💳 payment-service]
+C -- X-User-* headers --> G[✉️ notification-service]
 
-    D <-. register/discover .-> R
-    E <-. register/discover .-> R
-    F <-. register/discover .-> R
-    G <-. register/discover .-> R
+D <-. register/discover .-> R
+E <-. register/discover .-> R
+F <-. register/discover .-> R
+G <-. register/discover .-> R
 
-    D --> H[(Order DB)]
-    E --> I[(Product DB)]
-    F -- payment events --> G
-    D -- order events --> G
+D --> H[(Order DB)]
+E --> I[(Product DB)]
+F -- payment events --> G
+D -- order events --> G
 ```
 
 | Service | Responsibility |
 |---|---|
 | 🔐 **auth-service** | Owns credentials, issues & signs JWTs |
 | 🧭 **discovery-server** | Eureka registry — service discovery for every node below |
+| ⚙️ **config-server** | Serves centralized config to every service below from the separate `config-repo` git repo (see [`config-repo/README.md`](../config-repo/README.md)) |
 | 🚪 **api-gateway** | Single entry point; validates JWTs once, routes via Eureka, injects identity headers |
 | 🛍️ **product-service** | Catalog, pricing, product metadata |
 | 📦 **order-service** | Order lifecycle — create, fetch, update |
 | 💳 **payment-service** | Payment processing tied to orders |
 | ✉️ **notification-service** | Reacts to order/payment events, sends confirmations |
+| 🚚 **delivery-service** | Shipment tracking; consumes order events, publishes delivery status back to order-service |
+
+> `discovery-server` and `config-server` are the two infra services everything else depends on, so — to avoid a circular bootstrap — neither one is itself a config-server client; their config stays local to their own module.
 
 ---
 
-<sub>📁 Part of <a href="https://github.com/biruksolomon/spring-cloud-ecommerce">biruksolomon/spring-cloud-ecommerce</a> — Spring Boot · Spring Cloud Gateway · Eureka · JWT</sub>
+<sub>📁 Part of <a href="https://github.com/biruksolomon/spring-cloud-ecommerce">biruksolomon/spring-cloud-ecommerce</a> — Spring Boot · Spring Cloud Gateway · Eureka · Spring Cloud Config · JWT</sub>
