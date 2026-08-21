@@ -1,0 +1,4 @@
+# config-repo is its own separate git repository (see config-repo/README.md),
+# consumed by config-server via file://../config-repo in local dev. It is
+# intentionally not part of this repo's history.
+/config-repo/
