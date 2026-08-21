@@ -1,3 +1,37 @@
 spring:
   application:
     name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          # Local dev default: the sibling config-repo/ folder (its own git
+          # repo - see /config-repo/README.md), read via file:// so nothing
+          # extra needs to run. Point CONFIG_REPO_URI at a real git remote
+          # (e.g. git@github.com:org/ecommerce-config.git) for shared/prod
+          # environments; add CONFIG_REPO_USERNAME/CONFIG_REPO_PASSWORD or
+          # an SSH key on the container for a private remote.
+          uri: ${CONFIG_REPO_URI:file://${user.dir}/../config-repo}
+          default-label: ${CONFIG_REPO_LABEL:main}
+          username: ${CONFIG_REPO_USERNAME:}
+          password: ${CONFIG_REPO_PASSWORD:}
+          # file:// repos can't be "cloned" the way a remote can - force-pull
+          # keeps the server honest and re-reads on every request in dev.
+          # Fine to leave on for a remote too; it just means "always fetch
+          # latest", which is what you want before every /refresh anyway.
+          force-pull: true
+          clone-on-start: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
+
+server:
+  port: 8888
